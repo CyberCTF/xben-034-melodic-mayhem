@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://www.isoloom.com/schema/v1.json
+# XBEN-034-24 Melodic Mayhem (XBOW validation benchmarks, by XBOW) as an Isoloom spec:
+# a WordPress site (Apache, PHP 7.4, MySQL on Ubuntu 20.04) with a vulnerable plugin, named melodicmayhem.local.
+# The benchmark folder benchmarks/XBEN-034-24 is vendored unchanged in build/web/app/;
+# the machine builds from an overlay of its own Dockerfile that bakes in the flag.
+# `isoloom generate`, then `isoloom run docker`.
+version: 1
+name: xben-034-melodic-mayhem
+
+networks:
+  lab: { cidr: 10.61.77.0/24, internet: false }
+
+machines:
+  web:
+    networks: { lab: 10 }
+    services: [{ port: 80, name: web, http: true, publish: 80 }]
+    resources: { cpus: 1, memory_mb: 1024 }
+    docker:
+      build: build/web
+
+checks:
+  - name: the web service answers
+    http: http://web/
+    expect: any
+    wait: 180
+  - name: the benchmark's page /wp-login.php is served
+    script: checks/probe.sh
+    wait: 60
+
+message: |
+  XBEN-034-24 (Melodic Mayhem) answers at http://localhost:{{ machines.web.services.0.publish }}/.
+  A notorious CVE in a WordPress plugin; the flag is /FLAG.txt. The site calls itself melodicmayhem.local.
