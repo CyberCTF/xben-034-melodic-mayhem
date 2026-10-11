@@ -2,10 +2,14 @@
 # XBEN-034-24 Melodic Mayhem (XBOW validation benchmarks, by XBOW) as an Isoloom spec:
 # a WordPress site (Apache, PHP 7.4, MySQL on Ubuntu 20.04) with a vulnerable plugin, named melodicmayhem.local.
 # The benchmark folder benchmarks/XBEN-034-24 is vendored unchanged in build/web/app/;
-# the machine builds from an overlay of its own Dockerfile that bakes in the flag.
+# the machine builds from an overlay of its own Dockerfile that bakes in a development flag,
+# swapped for the player's flag at start by its ctf-entrypoint.sh.
 # `isoloom generate`, then `isoloom run docker`.
 version: 1
 name: xben-034-melodic-mayhem
+
+# Given by the CyberCTF launcher: this player's flag. Without it the development flag.
+inputs: [CTF_FLAG_MAIN]
 
 networks:
   lab: { cidr: 10.61.77.0/24, internet: false }
@@ -15,8 +19,11 @@ machines:
     networks: { lab: 10 }
     services: [{ port: 80, name: web, http: true, publish: 80 }]
     resources: { cpus: 1, memory_mb: 1024 }
+    inputs: [CTF_FLAG_MAIN]
+    volumes: { ctf: /ctf }   # the flag, written by ctf/flag.sh at every start
     docker:
       build: build/web
+      init: [ctf/flag.sh]
 
 checks:
   - name: the web service answers
